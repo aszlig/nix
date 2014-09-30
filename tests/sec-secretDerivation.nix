@@ -22,4 +22,15 @@ in
     inherit builder;
     secret = true;
   };
+
+  # This is used to attempt fetching secret files from the store.
+  evilFetcher = { path }: mkDerivation {
+    name = "evil-fetcher";
+    outputHashMode = "flat";
+    outputHashAlgo = "sha256";
+    outputHash = "0101010101010101010101010101010101010101010101010101";
+    builder = builtins.toFile "fetcher.sh" ''
+      cat "${path}"
+    '';
+  };
 }

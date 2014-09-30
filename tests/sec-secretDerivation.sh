@@ -63,3 +63,12 @@ if ! test $secretOutFileStat = $expected; then
     echo "Secret derivation output file should only be readable by root."
     exit 1
 fi
+
+# Check whether we can retrieve secret content by abusing fixed output
+# derivations (which are not sandboxed).
+if (nix-build --argstr path "$secretOut/file" -A evilFetcher \
+              ./sec-secretDerivation.nix 2>&1 || :
+   ) | grep -v '^42$'; then
+   echo "We were able to read secret file using fixed output derivations."
+   exit 1
+fi
