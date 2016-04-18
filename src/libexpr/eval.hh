@@ -281,6 +281,7 @@ private:
 
     friend struct ExprOpUpdate;
     friend struct ExprOpConcatLists;
+    friend struct ExprOpPathRef;
     friend struct ExprSelect;
     friend void prim_getAttr(EvalState & state, const Pos & pos, Value * * args, Value & v);
 };

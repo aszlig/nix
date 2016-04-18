@@ -119,6 +119,7 @@ or          { return OR_KW; }
 \-\>        { return IMPL; }
 \/\/        { return UPDATE; }
 \+\+        { return CONCAT; }
+\=\>        { return PATHREF; }
 
 {ID}        { yylval->id = strdup(yytext); return ID; }
 {INT}       { errno = 0;

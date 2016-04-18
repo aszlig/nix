@@ -1224,6 +1224,31 @@ void ExprOpConcatLists::eval(EvalState & state, Env & env, Value & v)
 }
 
 
+void ExprOpPathRef::eval(EvalState & state, Env & env, Value & v)
+{
+    Value output; e1->eval(state, env, output);
+    Value path;   e2->eval(state, env, path);
+    PathSet context;
+
+    if (!state.isDerivation(output))
+        throwEvalError("left-hand value of => needs to be a derivation but is"
+                       " %1% instead at %2%", showType(output), pos);
+
+    if (path.type != tPath)
+        throwEvalError("right-hand value of => needs to be a path but is"
+                       " %1% instead at %2%", showType(path), pos);
+
+    if (strlen(path.path) == 0 || *path.path != '/')
+        throwEvalError("pathref ‘%1%’ doesn't represent an absolute path,"
+                       " at %2%", path.path, pos);
+
+    string outputStr = state.coerceToString(pos, output, context, false, false);
+    string pathStr = state.coerceToString(pos, path, context, false, false);
+
+    mkString(v, outputStr + pathStr, context);
+}
+
+
 void EvalState::concatLists(Value & v, unsigned int nrLists, Value * * lists, const Pos & pos)
 {
     nrListConcats++;

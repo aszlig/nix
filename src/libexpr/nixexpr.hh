@@ -308,6 +308,7 @@ MakeBinOp(OpOr, "||")
 MakeBinOp(OpImpl, "->")
 MakeBinOp(OpUpdate, "//")
 MakeBinOp(OpConcatLists, "++")
+MakeBinOp(OpPathRef, "=>")
 
 struct ExprConcatStrings : Expr
 {

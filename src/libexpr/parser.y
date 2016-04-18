@@ -285,6 +285,7 @@ void yyerror(YYLTYPE * loc, yyscan_t scanner, ParseData * data, const char * err
 %left '+' '-'
 %left '*' '/'
 %right CONCAT
+%nonassoc PATHREF
 %nonassoc '?'
 %nonassoc NEGATE
 
@@ -341,6 +342,7 @@ expr_op
   | expr_op '*' expr_op { $$ = new ExprApp(CUR_POS, new ExprApp(new ExprVar(data->symbols.create("__mul")), $1), $3); }
   | expr_op '/' expr_op { $$ = new ExprApp(CUR_POS, new ExprApp(new ExprVar(data->symbols.create("__div")), $1), $3); }
   | expr_op CONCAT expr_op { $$ = new ExprOpConcatLists(CUR_POS, $1, $3); }
+  | expr_op PATHREF expr_op { $$ = new ExprOpPathRef(CUR_POS, $1, $3); }
   | expr_app
   ;
 
