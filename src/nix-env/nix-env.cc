@@ -876,7 +876,7 @@ static void queryJSON(Globals & globals, vector<DrvInfo> & elems)
                 printMsg(lvlError, format("derivation ‘%1%’ has invalid meta attribute ‘%2%’") % i.name % j);
                 cout << "null";
             } else {
-                PathSet context;
+                Context context;
                 printValueAsJSON(*globals.state, true, *v, cout, context);
             }
         }

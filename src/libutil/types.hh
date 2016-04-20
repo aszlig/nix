@@ -27,6 +27,7 @@ namespace nix {
 /* Inherit some names from other namespaces for convenience. */
 using std::string;
 using std::list;
+using std::pair;
 using std::set;
 using std::vector;
 using boost::format;
@@ -87,6 +88,11 @@ typedef set<string> StringSet;
 typedef string Path;
 typedef list<Path> Paths;
 typedef set<Path> PathSet;
+
+
+/* For string contexts, see libexpr/value.hh (struct Value) for its counterpart
+   and the description of it. */
+typedef set<pair<Path, set<Path>>> Context;
 
 
 typedef enum {

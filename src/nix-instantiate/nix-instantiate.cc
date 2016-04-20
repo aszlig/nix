@@ -48,7 +48,7 @@ void processExpr(EvalState & state, const Strings & attrPaths,
         Value & v(*findAlongAttrPath(state, i, autoArgs, vRoot));
         state.forceValue(v);
 
-        PathSet context;
+        Context context;
         if (evalOnly) {
             Value vRes;
             if (autoArgs.empty())

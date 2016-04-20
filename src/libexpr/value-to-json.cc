@@ -25,7 +25,7 @@ void escapeJSON(std::ostream & str, const string & s)
 
 
 void printValueAsJSON(EvalState & state, bool strict,
-    Value & v, std::ostream & str, PathSet & context)
+    Value & v, std::ostream & str, Context & context)
 {
     checkInterrupt();
 
@@ -95,7 +95,7 @@ void printValueAsJSON(EvalState & state, bool strict,
 
 
 void ExternalValueBase::printValueAsJSON(EvalState & state, bool strict,
-      std::ostream & str, PathSet & context) const
+      std::ostream & str, Context & context) const
 {
     throw TypeError(format("cannot convert %1% to JSON") % showType());
 }

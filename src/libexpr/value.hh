@@ -41,6 +41,11 @@ class XMLWriter;
 typedef long NixInt;
 typedef float NixFloat;
 
+typedef struct {
+    const char *input;
+    const char **pathrefs;
+} ContextItem;
+
 /* External values must descend from ExternalValueBase, so that
  * type-agnostic nix functions (e.g. showType) can be implemented
  */
@@ -64,7 +69,7 @@ class ExternalValueBase
     /* Coerce the value to a string. Defaults to uncoercable, i.e. throws an
      * error
      */
-    virtual string coerceToString(const Pos & pos, PathSet & context, bool copyMore, bool copyToStore) const;
+    virtual string coerceToString(const Pos & pos, Context & context, bool copyMore, bool copyToStore) const;
 
     /* Compare to another value of the same type. Defaults to uncomparable,
      * i.e. always false.
@@ -73,11 +78,11 @@ class ExternalValueBase
 
     /* Print the value as JSON. Defaults to unconvertable, i.e. throws an error */
     virtual void printValueAsJSON(EvalState & state, bool strict,
-        std::ostream & str, PathSet & context) const;
+        std::ostream & str, Context & context) const;
 
     /* Print the value as XML. Defaults to unevaluated */
     virtual void printValueAsXML(EvalState & state, bool strict, bool location,
-        XMLWriter & doc, PathSet & context, PathSet & drvsSeen) const;
+        XMLWriter & doc, Context & context, PathSet & drvsSeen) const;
 
     virtual ~ExternalValueBase()
     {
@@ -96,7 +101,7 @@ struct Value
         bool boolean;
 
         /* Strings in the evaluator carry a so-called `context' which
-           is a list of strings representing store paths.  This is to
+           is list of tuples representing store paths.  This is to
            allow users to write things like
 
              "--with-freetype2-library=" + freetype + "/lib"
@@ -108,16 +113,24 @@ struct Value
            will not have the correct dependencies in its inputDrvs and
            inputSrcs.
 
-           The semantics of the context is as follows: when a string
-           with context C is used as a derivation attribute, then the
-           derivations in C will be added to the inputDrvs of the
-           derivation, and the other store paths in C will be added to
-           the inputSrcs of the derivations.
+           Every tuple of the context contains a string in its first
+           element and a list of path references in the second element.
 
-           For canonicity, the store paths should be in sorted order. */
+           The semantics of the the first element in each context tuple
+           is as follows: when a string with context C is used as a
+           derivation attribute, then the derivations in C will be added
+           to the inputDrvs of the derivation, and the other store paths
+           in C will be added to the inputSrcs of the derivations.
+
+           Path references in the second element are a list of relative
+           paths which need to exist in the build output of the inputDrvs
+           in order for the current build to succeed or fail.
+
+           For canonicity, the store paths as well as the path references
+           should be in sorted order. */
         struct {
             const char * s;
-            const char * * context; // must be in sorted order
+            ContextItem * * context; // must be in sorted order
         } string;
 
         const char * path;

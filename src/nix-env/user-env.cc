@@ -112,7 +112,7 @@ bool createUserEnv(EvalState & state, DrvInfos & elems,
     Value args, topLevel;
     state.mkAttrs(args, 3);
     mkString(*state.allocAttr(args, state.symbols.create("manifest")),
-        manifestFile, singleton<PathSet>(manifestFile));
+        manifestFile, singleton<Context>(make_pair(manifestFile, set<Path>())));
     args.attrs->push_back(Attr(state.symbols.create("derivations"), &manifest));
     args.attrs->sort();
     mkApp(topLevel, envBuilder, args);
@@ -120,7 +120,7 @@ bool createUserEnv(EvalState & state, DrvInfos & elems,
     /* Evaluate it. */
     debug("evaluating user environment builder");
     state.forceValue(topLevel);
-    PathSet context;
+    Context context;
     Attr & aDrvPath(*topLevel.attrs->find(state.sDrvPath));
     Path topLevelDrv = state.coerceToPath(aDrvPath.pos ? *(aDrvPath.pos) : noPos, *(aDrvPath.value), context);
     Attr & aOutPath(*topLevel.attrs->find(state.sOutPath));

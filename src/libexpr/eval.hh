@@ -43,9 +43,9 @@ struct Env
 };
 
 
-void mkString(Value & v, const string & s, const PathSet & context = PathSet());
+void mkString(Value & v, const string & s, const Context & context = Context());
 
-void copyContext(const Value & v, PathSet & context);
+void copyContext(const Value & v, Context & context);
 
 
 /* Cache for calls to addToStore(); maps source paths to the store
@@ -161,7 +161,7 @@ public:
     inline void forceList(Value & v, const Pos & pos);
     void forceFunction(Value & v, const Pos & pos); // either lambda or primop
     string forceString(Value & v, const Pos & pos = noPos);
-    string forceString(Value & v, PathSet & context, const Pos & pos = noPos);
+    string forceString(Value & v, Context & context, const Pos & pos = noPos);
     string forceStringNoCtx(Value & v, const Pos & pos = noPos);
 
     /* Return true iff the value `v' denotes a derivation (i.e. a
@@ -172,15 +172,15 @@ public:
        string.  If `coerceMore' is set, also converts nulls, integers,
        booleans and lists to a string.  If `copyToStore' is set,
        referenced paths are copied to the Nix store as a side effect. */
-    string coerceToString(const Pos & pos, Value & v, PathSet & context,
+    string coerceToString(const Pos & pos, Value & v, Context & context,
         bool coerceMore = false, bool copyToStore = true);
 
-    string copyPathToStore(PathSet & context, const Path & path);
+    string copyPathToStore(Context & context, const Path & path);
 
     /* Path coercion.  Converts strings, paths and derivations to a
        path.  The result is guaranteed to be a canonicalised, absolute
        path.  Nothing is copied to the store. */
-    Path coerceToPath(const Pos & pos, Value & v, PathSet & context);
+    Path coerceToPath(const Pos & pos, Value & v, Context & context);
 
 public:
 
@@ -250,7 +250,7 @@ public:
     /* Print statistics. */
     void printStats();
 
-    void realiseContext(const PathSet & context);
+    void realiseContext(const Context & context);
 
 private:
 

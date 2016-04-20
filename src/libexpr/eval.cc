@@ -462,15 +462,24 @@ void mkString(Value & v, const char * s)
 }
 
 
-void mkString(Value & v, const string & s, const PathSet & context)
+void mkString(Value & v, const string & s, const Context & context)
 {
     mkString(v, s.c_str());
     if (!context.empty()) {
         unsigned int n = 0;
-        v.string.context = (const char * *)
-            allocBytes((context.size() + 1) * sizeof(char *));
-        for (auto & i : context)
-            v.string.context[n++] = dupString(i.c_str());
+        v.string.context = (ContextItem * *)
+            allocBytes((context.size() + 1) * sizeof(ContextItem*));
+        for (auto & i : context) {
+            v.string.context[n] = (ContextItem *)
+                allocBytes(sizeof(ContextItem*));
+            v.string.context[n]->input = dupString(get<0>(i).c_str());
+            unsigned int m = 0;
+            v.string.context[n]->pathrefs = (const char * *)
+                allocBytes((get<1>(i).size() + 1) * sizeof(char *));
+            for (auto & j : get<1>(i))
+                v.string.context[n]->pathrefs[m++] = dupString(j.c_str());
+            v.string.context[n++]->pathrefs[m] = 0;
+        }
         v.string.context[n] = 0;
     }
 }
@@ -1228,7 +1237,7 @@ void ExprOpPathRef::eval(EvalState & state, Env & env, Value & v)
 {
     Value output; e1->eval(state, env, output);
     Value path;   e2->eval(state, env, path);
-    PathSet context;
+    Context context;
 
     if (!state.isDerivation(output))
         throwEvalError("left-hand value of => needs to be a derivation but is"
@@ -1279,7 +1288,7 @@ void EvalState::concatLists(Value & v, unsigned int nrLists, Value * * lists, co
 
 void ExprConcatStrings::eval(EvalState & state, Env & env, Value & v)
 {
-    PathSet context;
+    Context context;
     std::ostringstream s;
     NixInt n = 0;
     NixFloat nf = 0;
@@ -1429,15 +1438,20 @@ string EvalState::forceString(Value & v, const Pos & pos)
 }
 
 
-void copyContext(const Value & v, PathSet & context)
+void copyContext(const Value & v, Context & context)
 {
-    if (v.string.context)
-        for (const char * * p = v.string.context; *p; ++p)
-            context.insert(*p);
+    if (v.string.context) {
+        for (ContextItem * * p = v.string.context; *p; ++p) {
+            set<Path> pathrefs;
+            for (const char * * r = (*p)->pathrefs; *r; ++r)
+                pathrefs.insert(*r);
+            context.insert(std::make_pair((*p)->input, pathrefs));
+        }
+    }
 }
 
 
-string EvalState::forceString(Value & v, PathSet & context, const Pos & pos)
+string EvalState::forceString(Value & v, Context & context, const Pos & pos)
 {
     string s = forceString(v, pos);
     copyContext(v, context);
@@ -1451,10 +1465,10 @@ string EvalState::forceStringNoCtx(Value & v, const Pos & pos)
     if (v.string.context) {
         if (pos)
             throwEvalError("the string ‘%1%’ is not allowed to refer to a store path (such as ‘%2%’), at %3%",
-                v.string.s, v.string.context[0], pos);
+                v.string.s, v.string.context[0]->input, pos);
         else
             throwEvalError("the string ‘%1%’ is not allowed to refer to a store path (such as ‘%2%’)",
-                v.string.s, v.string.context[0]);
+                v.string.s, v.string.context[0]->input);
     }
     return s;
 }
@@ -1471,8 +1485,8 @@ bool EvalState::isDerivation(Value & v)
 }
 
 
-string EvalState::coerceToString(const Pos & pos, Value & v, PathSet & context,
-    bool coerceMore, bool copyToStore)
+string EvalState::coerceToString(const Pos & pos, Value & v,
+    Context & context, bool coerceMore, bool copyToStore)
 {
     forceValue(v);
 
@@ -1532,7 +1546,7 @@ string EvalState::coerceToString(const Pos & pos, Value & v, PathSet & context,
 }
 
 
-string EvalState::copyPathToStore(PathSet & context, const Path & path)
+string EvalState::copyPathToStore(Context & context, const Path & path)
 {
     if (nix::isDerivation(path))
         throwEvalError("file names are not allowed to end in ‘%1%’", drvExtension);
@@ -1549,12 +1563,12 @@ string EvalState::copyPathToStore(PathSet & context, const Path & path)
             % path % dstPath);
     }
 
-    context.insert(dstPath);
+    context.insert(std::make_pair(dstPath, set<Path>()));
     return dstPath;
 }
 
 
-Path EvalState::coerceToPath(const Pos & pos, Value & v, PathSet & context)
+Path EvalState::coerceToPath(const Pos & pos, Value & v, Context & context)
 {
     string path = coerceToString(pos, v, context, false, false);
     if (path == "" || path[0] != '/')
@@ -1740,9 +1754,13 @@ size_t valueSize(Value & v)
         switch (v.type) {
         case tString:
             sz += doString(v.string.s);
-            if (v.string.context)
-                for (const char * * p = v.string.context; *p; ++p)
-                    sz += doString(*p);
+            if (v.string.context) {
+                for (ContextItem * * p = v.string.context; *p; ++p) {
+                    sz += doString((*p)->input);
+                    for (const char * * r = (*p)->pathrefs; *r; ++r)
+                        sz += doString(*r);
+                }
+            }
             break;
         case tPath:
             sz += doString(v.path);
@@ -1810,7 +1828,7 @@ size_t valueSize(Value & v)
 }
 
 
-string ExternalValueBase::coerceToString(const Pos & pos, PathSet & context, bool copyMore, bool copyToStore) const
+string ExternalValueBase::coerceToString(const Pos & pos, Context & context, bool copyMore, bool copyToStore) const
 {
     throw TypeError(format("cannot coerce %1% to a string, at %2%") %
         showType() % pos);
