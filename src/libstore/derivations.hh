@@ -34,16 +34,18 @@ struct DerivationOutput
 
 typedef std::map<string, DerivationOutput> DerivationOutputs;
 
+typedef std::map<string, std::list<Path>> DerivationInputSrcs;
+
 /* For inputs that are sub-derivations, we specify exactly which
    output IDs we are interested in. */
-typedef std::map<Path, StringSet> DerivationInputs;
+typedef std::map<Path, std::map<string, Path>> DerivationInputs;
 
 typedef std::map<string, string> StringPairs;
 
 struct BasicDerivation
 {
     DerivationOutputs outputs; /* keyed on symbolic IDs */
-    PathSet inputSrcs; /* inputs that are sources */
+    DerivationInputSrcs inputSrcs; /* inputs that are sources */
     string platform;
     Path builder;
     Strings args;

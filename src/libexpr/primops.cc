@@ -577,7 +577,7 @@ static void prim_derivationStrict(EvalState & state, const Pos & pos, Value * * 
             PathSet refs;
             state.store->computeFSClosure(string(item.first, 1), refs);
             for (auto & j : refs) {
-                drv.inputSrcs.insert(j);
+                drv.inputSrcs[j] = list<Path>();
                 if (isDerivation(j))
                     drv.inputDrvs[j] = state.store->queryDerivationOutputNames(j);
             }
